@@ -1,6 +1,4 @@
-// Letterlater: write a letter now to be opened in 1, 5 or 20 years. It is sealed in a link, reminded by calendar, and kept on a printed card.
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { downloadIcs, localDate } from "./lib/ics";
 import { uid, useCopy, useStored } from "./lib/store";
 import { prettyDate, todayISO } from "./lib/time";
@@ -18,11 +16,12 @@ async function seal(l: Omit<Letter, "id" | "link">) {
   const k = crypto.getRandomValues(new Uint8Array(32)), iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await crypto.subtle.importKey("raw", k, "AES-GCM", false, ["encrypt"]);
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(l)));
-  return `${location.origin}/t/letterlater?${new URLSearchParams({ c: b64(ct), iv: b64(iv), o: l.opens, t: l.to })}#${b64(k)}`;
+  return `${location.origin}${location.pathname}?${new URLSearchParams({ c: b64(ct), iv: b64(iv), o: l.opens, t: l.to })}#${b64(k)}`;
 }
 
 function Opened() {
-  const [p] = useSearchParams();
+  const [p] = useState(() => new URLSearchParams(window.location.search));
+
   const [l, setL] = useState<Omit<Letter, "id" | "link"> | null>(null);
   const [err, setErr] = useState("");
   const opens = p.get("o") ?? "", to = p.get("t") ?? "you";
